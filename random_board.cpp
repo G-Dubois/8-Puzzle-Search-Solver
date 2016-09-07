@@ -28,6 +28,15 @@ void readContents(int array[]) {
     }
 }
 
+Direction randomMovement(EightPuzzle puzzle) {
+    Direction direction = Up;
+    do {
+        direction = static_cast<Direction>(re()%4);
+    } while(!puzzle.canMove(direction));
+
+    return direction;
+}
+
 int main (int argc, char* argv[]) {
 
     int moves;
@@ -38,6 +47,8 @@ int main (int argc, char* argv[]) {
     } else {
         re.seed(atoi(argv[1]));
         moves = atoi(argv[2]);
+
+        cout << moves << "\n";
     }
 
     // Get the contents of the puzzle from standard input
@@ -46,7 +57,15 @@ int main (int argc, char* argv[]) {
 
     // Initialize the puzzle with the contents read in from stdin
     EightPuzzle puzzle(contents);
-    //puzzle.printPuzzle();
+
+    // Make moves number of random movements
+    for (int i = 0; i < moves; i++) {
+        puzzle.move(randomMovement(puzzle));
+    }
+
+    // Print the contents of the puzzle
+    puzzle.printPuzzle();
+
 
     return 0;
 }
