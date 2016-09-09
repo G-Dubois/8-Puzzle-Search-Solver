@@ -47,8 +47,6 @@ int main (int argc, char* argv[]) {
     } else {
         re.seed(atoi(argv[1]));
         moves = atoi(argv[2]);
-
-        cout << moves << "\n";
     }
 
     // Get the contents of the puzzle from standard input
