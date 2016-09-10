@@ -6,22 +6,19 @@
 #include <iostream>
 #include <set>
 #include <cmath>
+#include <vector>
 
 using namespace std;
 
 // A puzzle is a 3x3 matrix containing the puzzle board
-typedef int Puzzle[3][3];
+typedef int EightPuzzle[3][3];
 // A Heuristic is a function that compares two puzzles
 // and returns a value guessing the number of moves left
 // to solve the puzzle
-typedef int Heuristic(Puzzle&, Puzzle&);
+typedef int Heuristic(EightPuzzle&, EightPuzzle&);
 
 // Function definitions for the different heuristics
 Heuristic noHeuristic, displacedTiles, manhattan, myHeuristic;
-
-// Function definitions
-void getPuzzleFromInput(Puzzle&);
-void printPuzzle(Puzzle&);
 
 // The direction a move can take place
 enum Direction {
@@ -31,29 +28,58 @@ enum Direction {
 // A node in the search tree
 struct Node {
     int id;
-    int value;
+    int gValue;
+    int hValue;
+
+    EightPuzzle puzzle;
+    Node* parent;
+    vector<Node*> children;
+
+    int value() {
+        return (gValue + hValue);
+    }
 
     // Node initializer
-    Node(int newID, int newValue) {
+    Node(int newID, int gVal, int hVal, EightPuzzle& puz, Node* par) {
         id = newID;
-        value = newValue;
+        gValue = gVal;
+        hValue = hVal;
+
+        // Assigning the puzzle
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                puzzle[x][y] = puz[x][y];
+            }
+        }
+
+        parent = par;
     }
 
     // Overloaded < operator
-    bool operator<(const Node& rhs) const{
-        if (value < rhs.value) {
+    bool operator<(Node& rhs){
+        if (this->value() < rhs.value()) {
             return true;
-        } else if (value == rhs.value && id < rhs.id) {
+        } else if (value() == rhs.value() && id < rhs.id) {
             return true;
         } else {
             return false;
         }
     }
 
-    void print() const {
-        cout << "Node - id=" << id << " val=" << value << "\n";
+    void print(){
+        cout << "Node - id=" << id << " val=" << value() << "\n";
     }
 };
+
+ostream& operator<< (ostream& out, Node& node) {
+    out << "{id=" << node.id << "; f(s)=" << node.value() << "}";
+    return out;
+}
+
+// Function definitions
+void getPuzzleFromInput(EightPuzzle&);
+void print(EightPuzzle&);
+void printFrontier(set<Node*>&);
 
 // The depth is made global because it is used in my heuristicNumber
 int depth = 0;
@@ -83,13 +109,10 @@ int main (int argc, char* argv[]) {
     }
 
     // Instantiate the closed and open lists, and frontier
-    set<Node> closedList, openList, frontier;
-
-    // Instantiate a universal node id number
-    int globalID = 0;
+    set<Node*> closedList, openList, frontier;
 
     // Instantiate goal and puzzle
-    Puzzle goal, puzzle;
+    EightPuzzle goal, puzzle;
 
     // Set up the goal puzzle board
     int value = 0;
@@ -101,21 +124,32 @@ int main (int argc, char* argv[]) {
 
     // Get the puzzle from standard input
     getPuzzleFromInput(puzzle);
-    printPuzzle(puzzle);
-    cout << "Heuristic result: " << heuristic(puzzle, goal) << "\n";
+    //print(puzzle);
+    //cout << "Heuristic result: " << heuristic(puzzle, goal) << "\n";
+
+    // Instantiate a universal node id number and initial depth
+    int globalID = 0;
+    depth = 0;
+    Node* head = new Node(++globalID, depth, heuristic(puzzle, goal), puzzle, nullptr);
+
+    frontier.insert(head);
+    printFrontier(frontier);
+
+    // Now we are ready to run the search
+
 
     return 0;
 }
 
 // No heuristic always returns 0 for the heuristic value.
 // This causes the search to perform as a Uniform-Cost search.
-int noHeuristic(Puzzle& p, Puzzle& g) {
+int noHeuristic(EightPuzzle& p, EightPuzzle& g) {
     return 0;
 }
 
 // Displaced Tiles counts the numer of tiles (excluding the empty
 // tile) that are not in their goal position
-int displacedTiles(Puzzle& puzzle, Puzzle& goal) {
+int displacedTiles(EightPuzzle& puzzle, EightPuzzle& goal) {
     int numberOfDisplacedTiles = 0;
     for (int y = 0; y < 3; y++) {
         for (int x = 0; x < 3; x++) {
@@ -129,7 +163,7 @@ int displacedTiles(Puzzle& puzzle, Puzzle& goal) {
 
 // Manhattan counts the distance each tile is from its goal location
 // and sums these together.
-int manhattan(Puzzle& puzzle, Puzzle& goal) {
+int manhattan(EightPuzzle& puzzle, EightPuzzle& goal) {
     int totalDistanceOfDisplacedTiles = 0;
     //cout << "h2 = ";
     for (int y = 0; y < 3; y++) {
@@ -156,7 +190,7 @@ int manhattan(Puzzle& puzzle, Puzzle& goal) {
 // average solution cost of solving the 8-puzzle, which is 22.
 // If the depth has surpassed the average solution cost, return
 // 0, rather than a negative value
-int myHeuristic(Puzzle& puzzle, Puzzle& goal) {
+int myHeuristic(EightPuzzle& puzzle, EightPuzzle& goal) {
     const int averageSolutionCost = 22;
     if (depth <= averageSolutionCost) {
         return averageSolutionCost - depth;
@@ -166,7 +200,7 @@ int myHeuristic(Puzzle& puzzle, Puzzle& goal) {
 }
 
 // Get the contents of the puzzle from standard input
-void getPuzzleFromInput(Puzzle& puzzle) {
+void getPuzzleFromInput(EightPuzzle& puzzle) {
     for (int y = 0; y < 3; y++) {
         for (int x = 0; x < 3; x++) {
             cin >> puzzle[x][y];
@@ -175,11 +209,35 @@ void getPuzzleFromInput(Puzzle& puzzle) {
 }
 
 // Print the contents of the puzzle to standard output
-void printPuzzle(Puzzle& puzzle) {
+void print(EightPuzzle& puzzle) {
     for (int y = 0; y < 3; y++) {
         for (int x = 0; x < 3; x++) {
             cout << puzzle[x][y] << " ";
         }
         cout << "\n";
     }
+}
+
+// Print the contents of the frontier
+void printFrontier(set<Node*>& frontier) {
+    cout << "Frontier: ";
+    for (Node* nodePtr : frontier) {
+        cout << *nodePtr << ", ";
+    }
+    cout << "\n";
+}
+
+// Successor function determines the next possible states to explore
+
+
+// Check to see if the puzzle is in the goal state
+bool isGoal(EightPuzzle& puzzle, EightPuzzle& goal) {
+    for (int y = 0; y < 3; y++) {
+        for (int x = 0; x < 3; x++) {
+            if (puzzle[x][y] != goal[x][y]) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
