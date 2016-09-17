@@ -155,7 +155,8 @@ int main (int argc, char* argv[]) {
 
     // Instantiate the closed and open lists, and frontier
     set<Node*> closedList;
-    set<Node*, NodePtrCmp> openList, frontier, solution;
+    set<Node*, NodePtrCmp> openList, frontier;
+    vector<EightPuzzle*> solution;
 
     // Instantiate puzzle
     EightPuzzle puzzle;
@@ -241,14 +242,10 @@ int main (int argc, char* argv[]) {
             }
             frontier.insert(expandedNode->children.begin(), expandedNode->children.end());
         }
-    
         frontier.insert(openList.begin(), openList.end());
 
 
-        //printf("Frontier Contains:\n");
-        //for (Node* np : frontier) {
-        //    cout << "\t" << *np << "\n";
-        //}
+       //printFrontier(frontier);
 
         V++;
         N = closedList.size() + frontier.size();
@@ -259,12 +256,17 @@ int main (int argc, char* argv[]) {
         //printf("Depth of best path so far: %i\n", depth);
 
         if (done) {
-            cout << "Solution:\n";
-            print(expandedNode->puzzle);
-            cout << "\n";
-        }
+            //cout << "Solution:\n";
+            //print(expandedNode->puzzle);
+            //cout << "\n";
 
-        
+            Node* np = expandedNode;
+            do {
+                solution.insert(solution.begin(), &(np->puzzle));
+                np = np->parent;
+            } while(np != head);
+            solution.insert(solution.begin(), &(head->puzzle));
+        }
     }
 
     double branchingFactor = pow(N, 1.0/depth);
@@ -273,7 +275,11 @@ int main (int argc, char* argv[]) {
     cout << "N=" << N << "\n";
     cout << "d=" << depth << "\n";
     printf("b=%f\n", branchingFactor);
-    
+
+    for (EightPuzzle* puzzle : solution) {
+        printf("\n");
+        print(*puzzle);
+    }    
 
     return 0;
 }

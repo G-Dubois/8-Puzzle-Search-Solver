@@ -67,7 +67,7 @@ void readContents(EightPuzzle& puzzle) {
 Direction randomMovement(EightPuzzle& puzzle) {
     Direction direction = Up;
     do {
-        direction = static_cast<Direction>(random()%4);
+        direction = static_cast<Direction>((4.0*random()) / (RAND_MAX + 1.0));
     } while(!canMove(puzzle, direction));
 
     return direction;
