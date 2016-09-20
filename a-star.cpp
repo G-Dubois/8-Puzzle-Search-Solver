@@ -156,7 +156,7 @@ int main (int argc, char* argv[]) {
 
     // Instantiate the closed and open lists, and frontier
     set<Node*> closedList;
-    set<Node*, NodePtrCmp> openList, frontier;
+    set<Node*, NodePtrCmp> frontier;
     vector<EightPuzzle*> solution;
 
     // Instantiate puzzle
@@ -205,7 +205,7 @@ int main (int argc, char* argv[]) {
             closedList.insert(new Node(expandedNode->puzzle));
         }
 
-        printf("Closed List contains %i states\n", int(closedList.size()));
+        //printf("Closed List contains %i states\n", int(closedList.size()));
         //for (set<Node*>::iterator iter = closedList.begin();
         //     iter != closedList.end(); iter++) {
         //    print((*iter)->puzzle);
@@ -242,7 +242,7 @@ int main (int argc, char* argv[]) {
                     frontier.insert((*iter));
                 }
             }
-            frontier.insert(expandedNode->children.begin(), expandedNode->children.end());
+            //frontier.insert(expandedNode->children.begin(), expandedNode->children.end());
         }
         //frontier.insert(openList.begin(), openList.end());
 
@@ -274,7 +274,21 @@ int main (int argc, char* argv[]) {
     for (EightPuzzle* puzzle : solution) {
         printf("\n");
         print(*puzzle);
-    }    
+    }   
+
+    // Delete all items in closed list
+    for (set<Node*>::iterator iter = closedList.begin();
+         iter != closedList.end(); iter++) {
+
+        delete *iter;
+    }
+
+    // Delete all items in frontier
+    for (set<Node*, NodePtrCmp>::iterator iter = frontier.begin();
+         iter != frontier.end(); iter++) {
+
+        delete *iter;
+    }
 
     return 0;
 }
