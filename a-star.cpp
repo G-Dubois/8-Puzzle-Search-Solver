@@ -38,13 +38,21 @@ struct Node {
     set<Node*> children;
 
     int value() {
-        return (gValue + hValue);
+        return (depth + hValue);
     }
 
     // Node initializer
-    Node(int newID, int gVal, int hVal, EightPuzzle& puz, Node* par) {
+    Node(int newID, int hVal, EightPuzzle& puz, Node* par) {
+
+        parent = par;
+        if (parent != nullptr) {
+            depth = par->depth + 1;
+        } else {
+            depth = 0;
+        }
+
         id = newID;
-        gValue = gVal;
+        gValue = depth;
         hValue = hVal;
         fValue = gValue + hValue;
 
@@ -54,18 +62,11 @@ struct Node {
                 puzzle[x][y] = puz[x][y];
             }
         }
-
-        parent = par;
-        if (parent != nullptr) {
-            depth = par->depth + 1;
-        } else {
-            depth = 0;
-        }
     }
 
     // Initializer for closed list node
     Node(EightPuzzle& puz) {
-        id = gValue = hValue = 0;
+        id = depth = hValue = fValue = 0;
         parent = nullptr;
         children.empty();
         
@@ -121,7 +122,7 @@ void swap(EightPuzzle&, pair<int, int>, pair<int, int>);
 bool isInSet(EightPuzzle&, set<Node*>);
 
 // The depth and goal are made global because they are used in heuristic function
-int globalID;
+int globalID = 0;
 int depth = 0;                          // The total depth of the path
 int V = 0;                              // The number of nodes expanded
 int N = 0;                              // The closed list and open list size
@@ -173,13 +174,12 @@ int main (int argc, char* argv[]) {
     getPuzzleFromInput(puzzle);
 
     //print(puzzle);
-    //print(puzzle);
     //cout << "Heuristic result: " << heuristic(puzzle, goal) << "\n";
 
     // Set a universal node id number and initial depth
     globalID = 0;
-    depth = 0;
-    Node* head = new Node(++globalID, depth, heuristic(puzzle), puzzle, nullptr);
+    depth = 1;
+    Node* head = new Node(++globalID, heuristic(puzzle), puzzle, nullptr);
 
     frontier.insert(head);
 
@@ -190,22 +190,22 @@ int main (int argc, char* argv[]) {
     
         // Pop the first element off of the frontier
         Node* expandedNode = *frontier.begin();
-        frontier.erase(frontier.begin());
+        frontier.erase(expandedNode);
 
         //print(expandedNode->puzzle);
         //cout << "\n";
 
         // Clear the remaining frontier into the open list
-        openList.clear();
-        openList.insert(frontier.begin(), frontier.end());
-        frontier.clear();
+        //openList.clear();
+        //openList.insert(frontier.begin(), frontier.end());
+        //frontier.clear();
 
         // Insert the current node into the open list
         if (!isInSet(expandedNode->puzzle, closedList)) {
             closedList.insert(new Node(expandedNode->puzzle));
         }
 
-        //printf("Closed List contains %i states\n", int(closedList.size()));
+        printf("Closed List contains %i states\n", int(closedList.size()));
         //for (set<Node*>::iterator iter = closedList.begin();
         //     iter != closedList.end(); iter++) {
         //    print((*iter)->puzzle);
@@ -238,14 +238,13 @@ int main (int argc, char* argv[]) {
                     expandedNode->children.erase(*iter);
                     delete (*iter);
                     //cout << "Found a state in the closed list\n";
+                } else {
+                    frontier.insert((*iter));
                 }
             }
             frontier.insert(expandedNode->children.begin(), expandedNode->children.end());
         }
-        frontier.insert(openList.begin(), openList.end());
-
-
-       //printFrontier(frontier);
+        //frontier.insert(openList.begin(), openList.end());
 
         V++;
         N = closedList.size() + frontier.size();
@@ -256,10 +255,6 @@ int main (int argc, char* argv[]) {
         //printf("Depth of best path so far: %i\n", depth);
 
         if (done) {
-            //cout << "Solution:\n";
-            //print(expandedNode->puzzle);
-            //cout << "\n";
-
             Node* np = expandedNode;
             do {
                 solution.insert(solution.begin(), &(np->puzzle));
@@ -386,7 +381,7 @@ void successor(Node* node) {
             }
             move(newPuzzle, direction);
             //cout << "Moving (" << direction << ")\n";
-            node->children.insert(new Node(globalID++, node->gValue + 1, heuristic(newPuzzle), newPuzzle, node));
+            node->children.insert(new Node(globalID++, heuristic(newPuzzle), newPuzzle, node));
         }
     }
 }
